@@ -93,7 +93,7 @@ module Gemfile
 end
 def add_gem(*all) Gemfile.add(*all); end
 
-@recipes = ["core", "git", "railsapps", "learn_rails", "rails_bootstrap", "rails_foundation", "rails_omniauth", "rails_devise", "rails_devise_roles", "rails_devise_pundit", "rails_signup_download", "rails_mailinglist_activejob", "rails_stripe_checkout", "rails_stripe_coupons", "rails_stripe_membership_saas", "setup", "locale", "readme", "gems", "tests", "email", "devise", "omniauth", "roles", "frontend", "pages", "init", "analytics", "deployment", "extras"]
+@recipes = ["core", "git", "railsapps", "learn_rails", "rails_bootstrap", "rails_foundation", "rails_omniauth", "rails_devise", "rails_devise_roles", "rails_devise_pundit", "rails_shortcut_app", "rails_signup_download", "rails_signup_thankyou", "rails_mailinglist_activejob", "rails_stripe_checkout", "rails_stripe_coupons", "rails_stripe_membership_saas", "setup", "locale", "readme", "gems", "tests", "email", "devise", "omniauth", "roles", "frontend", "pages", "init", "analytics", "deployment", "extras"]
 @prefs = {}
 @gems = []
 @diagnostics_recipes = [["example"], ["setup"], ["railsapps"], ["gems", "setup"], ["gems", "readme", "setup"], ["extras", "gems", "readme", "setup"], ["example", "git"], ["git", "setup"], ["git", "railsapps"], ["gems", "git", "setup"], ["gems", "git", "readme", "setup"], ["extras", "gems", "git", "readme", "setup"], ["email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["core", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["core", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["core", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["email", "example", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["email", "example", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["email", "example", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["apps4", "core", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["apps4", "core", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "tests"], ["apps4", "core", "deployment", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "testing"], ["apps4", "core", "deployment", "email", "extras", "frontend", "gems", "git", "init", "railsapps", "readme", "setup", "tests"], ["apps4", "core", "deployment", "devise", "email", "extras", "frontend", "gems", "git", "init", "omniauth", "pundit", "railsapps", "readme", "setup", "tests"]]
@@ -252,8 +252,6 @@ say_wizard("\033[1m\033[36m" + "|_|  \\_\\__,_|_|_|___/_/    \\_\\ .__/| .__/|__
 say_wizard("\033[1m\033[36m" + "                             \| \|   \| \|" + "\033[0m")
 say_wizard("\033[1m\033[36m" + "                             \| \|   \| \|" + "\033[0m")
 say_wizard("\033[1m\033[36m" + '' + "\033[0m")
-say_wizard("\033[1m\033[36m" + "If you like Rails Composer, will you support it?" + "\033[0m")
-say_wizard("\033[1m\033[36m" + "You can help by purchasing our tutorials." + "\033[0m")
 say_wizard("Need help? Ask on Stack Overflow with the tag \'railsapps.\'")
 say_wizard("Your new application will contain diagnostics in its README file.")
 
@@ -265,9 +263,11 @@ end
 
 # this application template only supports Rails version 4.1 and newer
 case Rails::VERSION::MAJOR.to_s
+when "5"
+  say_wizard "You are using Rails version #{Rails::VERSION::STRING}. Please report any issues."
 when "3"
-    say_wizard "You are using Rails version #{Rails::VERSION::STRING} which is not supported. Use Rails 4.1 or newer."
-    raise StandardError.new "Rails #{Rails::VERSION::STRING} is not supported. Use Rails 4.1 or newer."
+  say_wizard "You are using Rails version #{Rails::VERSION::STRING} which is not supported. Use Rails 4.1 or newer."
+  raise StandardError.new "Rails #{Rails::VERSION::STRING} is not supported. Use Rails 4.1 or newer."
 when "4"
   case Rails::VERSION::MINOR.to_s
   when "0"
@@ -355,6 +355,30 @@ if options[:verbose]
 end
 
 case Rails::VERSION::MAJOR.to_s
+when "5"
+  prefs[:apps4] = multiple_choice "Build a starter application?",
+    [["Build a RailsApps example application", "railsapps"],
+    ["Contributed applications", "contributed_app"],
+    ["Custom application (experimental)", "none"]] unless prefs.has_key? :apps4
+  case prefs[:apps4]
+    when 'railsapps'
+        prefs[:apps4] = multiple_choice "Choose a starter application.",
+        [["learn-rails", "learn-rails"],
+        ["rails-bootstrap", "rails-bootstrap"],
+        ["rails-foundation", "rails-foundation"],
+        ["rails-mailinglist-activejob", "rails-mailinglist-activejob"],
+        ["rails-omniauth", "rails-omniauth"],
+        ["rails-devise", "rails-devise"],
+        ["rails-devise-roles", "rails-devise-roles"],
+        ["rails-devise-pundit", "rails-devise-pundit"],
+        ["rails-signup-download", "rails-signup-download"],
+        ["rails-stripe-checkout", "rails-stripe-checkout"],
+        ["rails-stripe-coupons", "rails-stripe-coupons"]]
+    when 'contributed_app'
+      prefs[:apps4] = multiple_choice "Choose a starter application.",
+        [["rails-shortcut-app", "rails-shortcut-app"],
+        ["rails-signup-thankyou", "rails-signup-thankyou"]]
+  end
 when "3"
   say_wizard "Please upgrade to Rails 4.1 or newer."
 when "4"
@@ -435,31 +459,40 @@ if prefer :apps4, 'learn-rails'
   prefs[:database] = 'sqlite'
   prefs[:deployment] = 'heroku'
   prefs[:devise_modules] = false
-  prefs[:dev_webserver] = 'webrick'
-  prefs[:email] = 'gmail'
-  prefs[:form_builder] = 'simple_form'
-  prefs[:frontend] = 'foundation5'
+  prefs[:dev_webserver] = 'puma'
+  prefs[:email] = 'sendgrid'
+  prefs[:frontend] = 'bootstrap3'
+  prefs[:layouts] = 'none'
+  prefs[:pages] = 'none'
   prefs[:github] = false
   prefs[:git] = true
   prefs[:local_env_file] = 'none'
   prefs[:prod_webserver] = 'same'
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:secrets] = ['owner_email', 'mailchimp_list_id', 'mailchimp_api_key']
   prefs[:templates] = 'erb'
   prefs[:tests] = false
-  prefs[:pages] = 'none'
   prefs[:locale] = 'none'
   prefs[:analytics] = 'none'
   prefs[:rubocop] = false
   prefs[:disable_turbolinks] = false
+  prefs[:rvmrc] = true
+
+  if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+    prefs[:form_builder] = false
+    prefs[:jquery] = 'gem'
+  else
+    # Rails 5.0 version uses SimpleForm
+    prefs[:form_builder] = 'simple_form'
+    add_gem 'minitest-rails-capybara', :group => :test
+  end
 
   # gems
   add_gem 'high_voltage'
   add_gem 'gibbon'
+  add_gem 'minitest-spec-rails', :group => :test
   gsub_file 'Gemfile', /gem 'sqlite3'\n/, ''
   add_gem 'sqlite3', :group => :development
-  add_gem 'rails_12factor', :group => :production
 
   stage_three do
     say_wizard "recipe stage three"
@@ -482,11 +515,19 @@ if prefer :apps4, 'learn-rails'
 
     # >-------------------------------[ Views ]--------------------------------<
 
-    copy_from_repo 'app/views/contacts/new.html.erb', :repo => repo
+    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+      copy_from_repo 'app/views/visitors/new.html.erb', :repo => repo
+      copy_from_repo 'app/views/contacts/new.html.erb', :repo => repo
+    else
+      # Rails 5.0 version uses SimpleForm
+      copy_from_repo 'app/views/visitors/new.html.erb', :repo => 'https://raw.githubusercontent.com/RailsApps/learn-rails/rails50/'
+      copy_from_repo 'app/views/contacts/new.html.erb', :repo => 'https://raw.githubusercontent.com/RailsApps/learn-rails/rails50/'
+    end
+
     copy_from_repo 'app/views/pages/about.html.erb', :repo => repo
     copy_from_repo 'app/views/user_mailer/contact_email.html.erb', :repo => repo
     copy_from_repo 'app/views/user_mailer/contact_email.text.erb', :repo => repo
-    copy_from_repo 'app/views/visitors/new.html.erb', :repo => repo
+
     # create navigation links using the rails_layout gem
     generate 'layout:navigation -f'
 
@@ -496,8 +537,15 @@ if prefer :apps4, 'learn-rails'
 
     # >-------------------------------[ Assets ]--------------------------------<
 
-    copy_from_repo 'app/assets/javascripts/segmentio.js', :repo => repo
+    copy_from_repo 'app/assets/javascripts/segment.js', :repo => repo
 
+    # >-------------------------------[ Tests ]--------------------------------<
+
+    copy_from_repo 'test/test_helper.rb', :repo => repo
+    copy_from_repo 'test/integration/home_page_test.rb', :repo => repo
+    copy_from_repo 'test/models/visitor_test.rb', :repo => repo
+
+    run 'bundle exec rake db:migrate'
   end
 end
 # >------------------------- recipes/learn_rails.rb --------------------------end<
@@ -521,14 +569,15 @@ if prefer :apps4, 'rails-bootstrap'
   prefs[:better_errors] = true
   prefs[:devise_modules] = false
   prefs[:email] = 'none'
-  prefs[:frontend] = 'bootstrap3'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:frontend] = multiple_choice "Front-end framework?",
+    [["Bootstrap 4.0", "bootstrap4"], ["Bootstrap 3.3", "bootstrap3"]] unless prefs.has_key? :frontend
+  prefs[:rvmrc] = true
 end
 # >----------------------- recipes/rails_bootstrap.rb ------------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
@@ -555,10 +604,10 @@ if prefer :apps4, 'rails-foundation'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 end
 # >----------------------- recipes/rails_foundation.rb -----------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
@@ -583,10 +632,10 @@ if prefer :apps4, 'rails-omniauth'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 end
 # >------------------------ recipes/rails_omniauth.rb ------------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
@@ -610,10 +659,10 @@ if prefer :apps4, 'rails-devise'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 end
 # >------------------------- recipes/rails_devise.rb -------------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
@@ -636,10 +685,10 @@ if prefer :apps4, 'rails-devise-roles'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 end
 # >---------------------- recipes/rails_devise_roles.rb ----------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
@@ -662,12 +711,56 @@ if prefer :apps4, 'rails-devise-pundit'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 end
 # >--------------------- recipes/rails_devise_pundit.rb ----------------------end<
+# >-------------------------- templates/recipe.erb ---------------------------end<
+
+# >-------------------------- templates/recipe.erb ---------------------------start<
+# >--------------------------[ rails_shortcut_app ]---------------------------<
+@current_recipe = "rails_shortcut_app"
+@before_configs["rails_shortcut_app"].call if @before_configs["rails_shortcut_app"]
+say_recipe 'rails_shortcut_app'
+@configs[@current_recipe] = config
+# >---------------------- recipes/rails_shortcut_app.rb ----------------------start<
+
+# Application template recipe for the rails_apps_composer. Change the recipe here:
+# https://github.com/RailsApps/rails_apps_composer/blob/master/recipes/rails_shortcut_app.rb
+
+if prefer :apps4, 'rails-shortcut-app'
+  prefs[:authentication] = 'devise'
+  prefs[:authorization] = 'roles'
+  prefs[:dashboard] = 'none'
+  prefs[:ban_spiders] = false
+  prefs[:better_errors] = true
+  prefs[:database] = 'sqlite'
+  prefs[:deployment] = 'none'
+  prefs[:devise_modules] = false
+  prefs[:dev_webserver] = 'puma'
+  prefs[:email] = 'none'
+  prefs[:frontend] = 'bootstrap3'
+  prefs[:layouts] = 'none'
+  prefs[:pages] = 'none'
+  prefs[:github] = false
+  prefs[:git] = true
+  prefs[:local_env_file] = false
+  prefs[:prod_webserver] = 'same'
+  prefs[:pry] = false
+  prefs[:pages] = 'about+users'
+  prefs[:templates] = 'erb'
+  prefs[:tests] = 'none'
+  prefs[:locale] = 'none'
+  prefs[:analytics] = 'none'
+  prefs[:rubocop] = false
+  prefs[:disable_turbolinks] = true
+  prefs[:rvmrc] = true
+  prefs[:form_builder] = false
+  prefs[:jquery] = 'gem'
+end
+# >---------------------- recipes/rails_shortcut_app.rb ----------------------end<
 # >-------------------------- templates/recipe.erb ---------------------------end<
 
 # >-------------------------- templates/recipe.erb ---------------------------start<
@@ -690,11 +783,11 @@ if prefer :apps4, 'rails-signup-download'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:secrets] = ['mailchimp_list_id', 'mailchimp_api_key']
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 
   # gems
   add_gem 'gibbon'
@@ -741,6 +834,82 @@ end
 # >-------------------------- templates/recipe.erb ---------------------------end<
 
 # >-------------------------- templates/recipe.erb ---------------------------start<
+# >-------------------------[ rails_signup_thankyou ]-------------------------<
+@current_recipe = "rails_signup_thankyou"
+@before_configs["rails_signup_thankyou"].call if @before_configs["rails_signup_thankyou"]
+say_recipe 'rails_signup_thankyou'
+@configs[@current_recipe] = config
+# >-------------------- recipes/rails_signup_thankyou.rb ---------------------start<
+
+# Application template recipe for the rails_apps_composer. Change the recipe here:
+# https://github.com/RailsApps/rails_apps_composer/blob/master/recipes/rails_signup_thankyou.rb
+
+if prefer :apps4, 'rails-signup-thankyou'
+  prefs[:authentication] = 'devise'
+  prefs[:authorization] = 'roles'
+  prefs[:dashboard] = 'none'
+  prefs[:ban_spiders] = false
+  prefs[:better_errors] = true
+  prefs[:database] = 'sqlite'
+  prefs[:deployment] = 'none'
+  prefs[:devise_modules] = false
+  prefs[:dev_webserver] = 'puma'
+  prefs[:email] = 'none'
+  prefs[:frontend] = 'bootstrap3'
+  prefs[:layouts] = 'none'
+  prefs[:pages] = 'none'
+  prefs[:github] = false
+  prefs[:git] = true
+  prefs[:local_env_file] = false
+  prefs[:prod_webserver] = 'same'
+  prefs[:pry] = false
+  prefs[:pages] = 'about+users'
+  prefs[:templates] = 'erb'
+  prefs[:tests] = 'none'
+  prefs[:locale] = 'none'
+  prefs[:analytics] = 'none'
+  prefs[:rubocop] = false
+  prefs[:disable_turbolinks] = true
+  prefs[:rvmrc] = true
+  prefs[:form_builder] = false
+  prefs[:jquery] = 'gem'
+
+  stage_three do
+    say_wizard "recipe stage three"
+    repo = 'https://raw.github.com/RailsApps/rails-signup-thankyou/master/'
+
+    # >-------------------------------[ Models ]--------------------------------<
+
+    copy_from_repo 'app/models/user.rb', :repo => repo
+
+    # >-------------------------------[ Controllers ]--------------------------------<
+
+    copy_from_repo 'app/controllers/application_controller.rb', :repo => repo
+    copy_from_repo 'app/controllers/visitors_controller.rb', :repo => repo
+    copy_from_repo 'app/controllers/products_controller.rb', :repo => repo
+    copy_from_repo 'app/controllers/thank_you_controller.rb', :repo => repo
+
+    # >-------------------------------[ Views ]--------------------------------<
+
+    copy_from_repo 'app/views/visitors/index.html.erb', :repo => repo
+    copy_from_repo 'app/views/products/product.pdf', :repo => repo
+    copy_from_repo 'app/views/thank_you/index.html.erb', :repo => repo
+
+    # >-------------------------------[ Routes ]--------------------------------<
+
+    copy_from_repo 'config/routes.rb', :repo => repo
+
+    # >-------------------------------[ Tests ]--------------------------------<
+
+    copy_from_repo 'spec/features/users/product_acquisition_spec.rb', :repo => repo
+    copy_from_repo 'spec/controllers/products_controller_spec.rb', :repo => repo
+
+  end
+end
+# >-------------------- recipes/rails_signup_thankyou.rb ---------------------end<
+# >-------------------------- templates/recipe.erb ---------------------------end<
+
+# >-------------------------- templates/recipe.erb ---------------------------start<
 # >----------------------[ rails_mailinglist_activejob ]----------------------<
 @current_recipe = "rails_mailinglist_activejob"
 @before_configs["rails_mailinglist_activejob"].call if @before_configs["rails_mailinglist_activejob"]
@@ -760,11 +929,11 @@ if prefer :apps4, 'rails-mailinglist-activejob'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:secrets] = ['mailchimp_list_id', 'mailchimp_api_key']
   prefs[:pages] = 'about'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 
   # gems
   add_gem 'gibbon'
@@ -838,7 +1007,6 @@ if prefer :apps4, 'rails-stripe-checkout'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:secrets] = ['product_price',
     'product_title',
     'stripe_publishable_key',
@@ -848,6 +1016,7 @@ if prefer :apps4, 'rails-stripe-checkout'
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 
   # gems
   add_gem 'gibbon'
@@ -923,7 +1092,6 @@ if prefer :apps4, 'rails-stripe-coupons'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:secrets] = ['stripe_publishable_key',
     'stripe_api_key',
     'product_price',
@@ -933,6 +1101,7 @@ if prefer :apps4, 'rails-stripe-coupons'
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 
   # gems
   add_gem 'gibbon'
@@ -1048,7 +1217,6 @@ if prefer :apps4, 'rails-stripe-membership-saas'
   prefs[:git] = true
   prefs[:local_env_file] = false
   prefs[:pry] = false
-  prefs[:quiet_assets] = true
   prefs[:disable_turbolinks] = true
   prefs[:secrets] = ['stripe_publishable_key',
     'stripe_api_key',
@@ -1057,6 +1225,7 @@ if prefer :apps4, 'rails-stripe-membership-saas'
   prefs[:pages] = 'about+users'
   prefs[:locale] = 'none'
   prefs[:rubocop] = false
+  prefs[:rvmrc] = true
 
   # gems
   add_gem 'gibbon'
@@ -1162,11 +1331,11 @@ gemfile = File.read(destination_root() + '/Gemfile')
 sqlite_detected = gemfile.include? 'sqlite3'
 
 ## Web Server
-prefs[:dev_webserver] = multiple_choice "Web server for development?", [["WEBrick (default)", "webrick"],
-  ["Thin", "thin"], ["Unicorn", "unicorn"], ["Puma", "puma"], ["Phusion Passenger (Apache/Nginx)", "passenger"],
+prefs[:dev_webserver] = multiple_choice "Web server for development?", [["Puma (default)", "puma"],
+  ["Thin", "thin"], ["Unicorn", "unicorn"], ["Phusion Passenger (Apache/Nginx)", "passenger"],
   ["Phusion Passenger (Standalone)", "passenger_standalone"]] unless prefs.has_key? :dev_webserver
 prefs[:prod_webserver] = multiple_choice "Web server for production?", [["Same as development", "same"],
-  ["Thin", "thin"], ["Unicorn", "unicorn"], ["Puma", "puma"], ["Phusion Passenger (Apache/Nginx)", "passenger"],
+  ["Thin", "thin"], ["Unicorn", "unicorn"], ["Phusion Passenger (Apache/Nginx)", "passenger"],
   ["Phusion Passenger (Standalone)", "passenger_standalone"]] unless prefs.has_key? :prod_webserver
 prefs[:prod_webserver] = prefs[:dev_webserver] if prefs[:prod_webserver] == 'same'
 
@@ -1181,7 +1350,7 @@ prefs[:templates] = multiple_choice "Template engine?", [["ERB", "erb"], ["Haml"
 ## Testing Framework
 if recipes.include? 'tests'
   prefs[:tests] = multiple_choice "Test framework?", [["None", "none"],
-    ["RSpec with Capybara", "rspec"]] unless prefs.has_key? :tests
+    ["RSpec", "rspec"]] unless prefs.has_key? :tests
   case prefs[:tests]
     when 'rspec'
       say_wizard "Adding DatabaseCleaner, FactoryGirl, Faker, Launchy, Selenium"
@@ -1192,9 +1361,22 @@ end
 ## Front-end Framework
 if recipes.include? 'frontend'
   prefs[:frontend] = multiple_choice "Front-end framework?", [["None", "none"],
-    ["Bootstrap 3.3", "bootstrap3"], ["Bootstrap 2.3", "bootstrap2"],
+    ["Bootstrap 4.0", "bootstrap4"], ["Bootstrap 3.3", "bootstrap3"], ["Bootstrap 2.3", "bootstrap2"],
     ["Zurb Foundation 5.5", "foundation5"], ["Zurb Foundation 4.0", "foundation4"],
     ["Simple CSS", "simple"]] unless prefs.has_key? :frontend
+end
+
+## jQuery
+if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+  if prefs[:frontend] == 'none'
+    prefs[:jquery] = multiple_choice "Add jQuery?", [["No", "none"],
+      ["Add jquery-rails gem", "gem"],
+      ["Add using yarn", "yarn"]] unless prefs.has_key? :jquery
+  else
+    prefs[:jquery] = multiple_choice "How to install jQuery?",
+      [["Add jquery-rails gem", "gem"],
+      ["Add using yarn", "yarn"]] unless prefs.has_key? :jquery
+  end
 end
 
 ## Email
@@ -1223,13 +1405,17 @@ if (recipes.include? 'devise') || (recipes.include? 'omniauth')
   prefs[:authorization] = multiple_choice "Authorization?", [["None", "none"], ["Simple role-based", "roles"], ["Pundit", "pundit"]] unless prefs.has_key? :authorization
   if prefer :authentication, 'devise'
     if (prefer :authorization, 'roles') || (prefer :authorization, 'pundit')
-      prefs[:dashboard] = multiple_choice "Admin interface for database?", [["None", "none"], ["Upmin", "upmin"]] unless prefs.has_key? :dashboard
+      prefs[:dashboard] = multiple_choice "Admin interface for database?", [["None", "none"],
+        ["Thoughtbot Administrate", "administrate"]] unless prefs.has_key? :dashboard
     end
   end
 end
 
 ## Form Builder
-prefs[:form_builder] = multiple_choice "Use a form builder gem?", [["None", "none"], ["SimpleForm", "simple_form"]] unless prefs.has_key? :form_builder
+## (no simple_form for Bootstrap 4 yet)
+unless prefs[:frontend] == 'bootstrap4'
+  prefs[:form_builder] = multiple_choice "Use a form builder gem?", [["None", "none"], ["SimpleForm", "simple_form"]] unless prefs.has_key? :form_builder
+end
 
 ## Pages
 if recipes.include? 'pages'
@@ -1273,33 +1459,34 @@ end
 # save configuration before anything can fail
 create_file 'config/railscomposer.yml', "# This application was generated with Rails Composer\n\n"
 append_to_file 'config/railscomposer.yml' do <<-TEXT
-apps4: [#{prefs[:apps4]}]
-announcements: [#{prefs[:announcements]}]
-dev_webserver: [#{prefs[:dev_webserver]}]
-prod_webserver: [#{prefs[:prod_webserver]}]
-database: [#{prefs[:database]}]
-templates: [#{prefs[:templates]}]
-tests: [#{prefs[:tests]}]
-continuous_testing: [#{prefs[:continuous_testing]}]
-frontend: [#{prefs[:frontend]}]
-email: [#{prefs[:email]}]
-authentication: [#{prefs[:authentication]}]
-devise_modules: [#{prefs[:devise_modules]}]
-omniauth_provider: [#{prefs[:omniauth_provider]}]
-authorization: [#{prefs[:authorization]}]
-form_builder: [#{prefs[:form_builder]}]
-pages: [#{prefs[:pages]}]
-layouts: [#{prefs[:layouts]}]
-locale: [#{prefs[:locale]}]
-analytics: [#{prefs[:analytics]}]
-deployment: [#{prefs[:deployment]}]
-ban_spiders: [#{prefs[:ban_spiders]}]
-github: [#{prefs[:github]}]
-local_env_file: [#{prefs[:local_env_file]}]
-quiet_assets: [#{prefs[:quiet_assets]}]
-better_errors: [#{prefs[:better_errors]}]
-pry: [#{prefs[:pry]}]
-rvmrc: [#{prefs[:rvmrc]}]
+development:
+  apps4: #{prefs[:apps4]}
+  announcements: #{prefs[:announcements]}
+  dev_webserver: #{prefs[:dev_webserver]}
+  prod_webserver: #{prefs[:prod_webserver]}
+  database: #{prefs[:database]}
+  templates: #{prefs[:templates]}
+  tests: #{prefs[:tests]}
+  continuous_testing: #{prefs[:continuous_testing]}
+  frontend: #{prefs[:frontend]}
+  email: #{prefs[:email]}
+  authentication: #{prefs[:authentication]}
+  devise_modules: #{prefs[:devise_modules]}
+  omniauth_provider: #{prefs[:omniauth_provider]}
+  authorization: #{prefs[:authorization]}
+  form_builder: #{prefs[:form_builder]}
+  pages: #{prefs[:pages]}
+  layouts: #{prefs[:layouts]}
+  locale: #{prefs[:locale]}
+  analytics: #{prefs[:analytics]}
+  deployment: #{prefs[:deployment]}
+  ban_spiders: #{prefs[:ban_spiders]}
+  github: #{prefs[:github]}
+  local_env_file: #{prefs[:local_env_file]}
+  better_errors: #{prefs[:better_errors]}
+  pry: #{prefs[:pry]}
+  rvmrc: #{prefs[:rvmrc]}
+  dashboard: #{prefs[:dashboard]}
 TEXT
 end
 # >---------------------------- recipes/setup.rb -----------------------------end<
@@ -1414,8 +1601,6 @@ option  Create a GitHub repository? (y/n)
 choose  Enter your selection: [#{prefs[:github]}]
 option  Add gem and file for environment variables?
 choose  Enter your selection: [#{prefs[:local_env_file]}]
-option  Reduce assets logger noise during development?
-choose  Enter your selection: [#{prefs[:quiet_assets]}]
 option  Improve error reporting with 'better_errors' during development?
 choose  Enter your selection: [#{prefs[:better_errors]}]
 option  Use 'pry' as console replacement during development and test?
@@ -1449,6 +1634,7 @@ Rails Composer: http://railscomposer.com/
 TEXT
   end
 
+  remove_file 'README.md'
   create_file 'README.md', "#{app_name.humanize.titleize}\n================\n\n"
 
   if prefer :deployment, 'heroku'
@@ -1545,27 +1731,33 @@ if (prefs[:dev_webserver] == prefs[:prod_webserver])
   add_gem 'thin' if prefer :dev_webserver, 'thin'
   add_gem 'unicorn' if prefer :dev_webserver, 'unicorn'
   add_gem 'unicorn-rails' if prefer :dev_webserver, 'unicorn'
-  add_gem 'puma' if prefer :dev_webserver, 'puma'
   add_gem 'passenger' if prefer :dev_webserver, 'passenger_standalone'
 else
   add_gem 'thin', :group => [:development, :test] if prefer :dev_webserver, 'thin'
   add_gem 'unicorn', :group => [:development, :test] if prefer :dev_webserver, 'unicorn'
   add_gem 'unicorn-rails', :group => [:development, :test] if prefer :dev_webserver, 'unicorn'
-  add_gem 'puma', :group => [:development, :test] if prefer :dev_webserver, 'puma'
   add_gem 'passenger', :group => [:development, :test] if prefer :dev_webserver, 'passenger_standalone'
   add_gem 'thin', :group => :production if prefer :prod_webserver, 'thin'
   add_gem 'unicorn', :group => :production if prefer :prod_webserver, 'unicorn'
-  add_gem 'puma', :group => :production if prefer :prod_webserver, 'puma'
   add_gem 'passenger', :group => :production if prefer :prod_webserver, 'passenger_standalone'
 end
 
 ## Database Adapter
 gsub_file 'Gemfile', /gem 'sqlite3'\n/, '' unless prefer :database, 'sqlite'
 gsub_file 'Gemfile', /gem 'pg'.*/, ''
-add_gem 'pg' if prefer :database, 'postgresql'
+if prefer :database, 'postgresql'
+  if Rails::VERSION::MAJOR < 5
+    add_gem 'pg', '~> 0.18'
+  else
+    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR <= 1 && Rails::VERSION::MINOR <= 5
+      add_gem 'pg', '~> 0.18'
+    else
+      add_gem 'pg'
+    end
+  end
+end
 gsub_file 'Gemfile', /gem 'mysql2'.*/, ''
 add_gem 'mysql2', '~> 0.3.18' if prefer :database, 'mysql'
-
 ## Gem to set up controllers, views, and routing in the 'apps4' recipe
 add_gem 'rails_apps_pages', :group => :development if prefs[:apps4]
 
@@ -1585,12 +1777,14 @@ if prefer :tests, 'rspec'
   add_gem 'rails_apps_testing', :group => :development
   add_gem 'rspec-rails', :group => [:development, :test]
   add_gem 'spring-commands-rspec', :group => :development
-  add_gem 'factory_girl_rails', :group => [:development, :test]
+  add_gem 'factory_bot_rails', :group => [:development, :test]
   add_gem 'faker', :group => [:development, :test]
-  add_gem 'capybara', :group => :test
+  unless Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+    add_gem 'capybara', :group => :test
+    add_gem 'selenium-webdriver', :group => :test
+  end
   add_gem 'database_cleaner', :group => :test
   add_gem 'launchy', :group => :test
-  add_gem 'selenium-webdriver', :group => :test
   if prefer :continuous_testing, 'guard'
     add_gem 'guard-bundler', :group => :development
     add_gem 'guard-rails', :group => :development
@@ -1608,11 +1802,21 @@ case prefs[:frontend]
     add_gem 'bootstrap-sass', '~> 2.3.2.2'
   when 'bootstrap3'
     add_gem 'bootstrap-sass'
+  when 'bootstrap4'
+    add_gem 'bootstrap', '~> 4.0.0'
   when 'foundation4'
     add_gem 'zurb-foundation', '~> 4.3.2'
     add_gem 'compass-rails', '~> 1.1.2'
   when 'foundation5'
-    add_gem 'foundation-rails'
+    add_gem 'foundation-rails', '~> 5.5'
+end
+
+## jQuery
+case prefs[:jquery]
+  when 'gem'
+    add_gem 'jquery-rails'
+  when 'yarn'
+    run 'bundle exec yarn add jquery'
 end
 
 ## Pages
@@ -1623,17 +1827,17 @@ case prefs[:pages]
     add_gem 'high_voltage'
 end
 
-## Email
-add_gem 'sendgrid' if prefer :email, 'sendgrid'
-
 ## Authentication (Devise)
 if prefer :authentication, 'devise'
     add_gem 'devise'
     add_gem 'devise_invitable' if prefer :devise_modules, 'invitable'
 end
 
-## Administratative Interface (Upmin)
-add_gem 'upmin-admin' if prefer :dashboard, 'upmin'
+## Administratative Interface
+if prefer :dashboard, 'administrate'
+  add_gem 'administrate'
+  add_gem 'bourbon'
+end
 
 ## Authentication (OmniAuth)
 add_gem 'omniauth' if prefer :authentication, 'omniauth'
@@ -1732,6 +1936,8 @@ stage_two do
       when 'bootstrap3'
         say_wizard "recipe installing simple_form for use with Bootstrap"
         generate 'simple_form:install --bootstrap'
+      when 'bootstrap4'
+        say_wizard "simple_form not yet available for use with Bootstrap 4"
       when 'foundation5'
         say_wizard "recipe installing simple_form for use with Zurb Foundation"
         generate 'simple_form:install --foundation'
@@ -1774,12 +1980,10 @@ FILE
     end
     create_file 'Procfile', "web: bundle exec rails server -p $PORT\n" if prefer :prod_webserver, 'thin'
     create_file 'Procfile', "web: bundle exec unicorn -p $PORT\n" if prefer :prod_webserver, 'unicorn'
-    create_file 'Procfile', "web: bundle exec puma -p $PORT\n" if prefer :prod_webserver, 'puma'
     create_file 'Procfile', "web: bundle exec passenger start -p $PORT\n" if prefer :prod_webserver, 'passenger_standalone'
     if (prefs[:dev_webserver] != prefs[:prod_webserver])
       create_file 'Procfile.dev', "web: bundle exec rails server -p $PORT\n" if prefer :dev_webserver, 'thin'
       create_file 'Procfile.dev', "web: bundle exec unicorn -p $PORT\n" if prefer :dev_webserver, 'unicorn'
-      create_file 'Procfile.dev', "web: bundle exec puma -p $PORT\n" if prefer :dev_webserver, 'puma'
       create_file 'Procfile.dev', "web: bundle exec passenger start -p $PORT\n" if prefer :dev_webserver, 'passenger_standalone'
     end
   end
@@ -2052,10 +2256,18 @@ stage_two do
       generate 'layout:install bootstrap2 -f'
     when 'bootstrap3'
       generate 'layout:install bootstrap3 -f'
+    when 'bootstrap4'
+      generate 'layout:install bootstrap4 -f'
     when 'foundation4'
       generate 'layout:install foundation4 -f'
     when 'foundation5'
       generate 'layout:install foundation5 -f'
+    else
+      case prefs[:jquery]
+        when 'gem', 'yarn'
+        say_wizard "modifying application.js for jQuery"
+        insert_into_file('app/assets/javascripts/application.js', "//= require jquery\n", :before => /^ *\/\/= require rails-ujs/, :force => false)
+      end
   end
 
   ### GIT ###
@@ -2093,7 +2305,6 @@ stage_two do
       generate 'pages:roles -f' if prefer :authorization, 'roles'
       generate 'pages:authorized -f' if prefer :authorization, 'pundit'
   end
-  generate 'pages:upmin -f' if prefer :dashboard, 'upmin'
   ### GIT ###
   git :add => '-A' if prefer :git, true
   git :commit => '-qm "rails_apps_composer: add pages"' if prefer :git, true
@@ -2101,6 +2312,7 @@ end
 
 stage_four do
   say_wizard "recipe stage four"
+  generate 'administrate:install' if prefer :dashboard, 'administrate'
   case prefs[:layouts]
     when 'bare'
       generate 'theme:bare -f'
@@ -2169,12 +2381,14 @@ say_recipe 'init'
 
 stage_three do
   say_wizard "recipe stage three"
+  copy_from_repo 'config/secrets.yml' if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 2
+  copy_from_repo 'config/secrets.yml' if Rails::VERSION::MAJOR >= 6
   if (!prefs[:secrets].nil?)
     prefs[:secrets].each do |secret|
       env_var = "  #{secret}: <%= ENV[\"#{secret.upcase}\"] %>"
       inject_into_file 'config/secrets.yml', "\n" + env_var, :after => "development:"
       ### 'inject_into_file' doesn't let us inject the same text twice unless we append the extra space, why?
-      inject_into_file 'config/secrets.yml', "\n" + env_var + " ", :after => "production:"
+      inject_into_file 'config/secrets.yml', "\n" + env_var + " ", :after => "\n" + "production:"
     end
   end
   case prefs[:email]
@@ -2202,11 +2416,11 @@ stage_three do
   figaro_omniauth  = foreman_omniauth.gsub('=', ': ')
   ## EMAIL
   inject_into_file 'config/secrets.yml', "\n" + "  domain_name: example.com", :after => "development:"
-  inject_into_file 'config/secrets.yml', "\n" + "  domain_name: <%= ENV[\"DOMAIN_NAME\"] %>", :after => "production:"
+  inject_into_file 'config/secrets.yml', "\n" + "  domain_name: <%= ENV[\"DOMAIN_NAME\"] %>", :after => "\n" + "production:"
   inject_into_file 'config/secrets.yml', "\n" + secrets_email, :after => "development:"
   unless prefer :email, 'none'
     ### 'inject_into_file' doesn't let us inject the same text twice unless we append the extra space, why?
-    inject_into_file 'config/secrets.yml', "\n" + secrets_email + " ", :after => "production:"
+    inject_into_file 'config/secrets.yml', "\n" + secrets_email + " ", :after => "\n" + "production:"
     append_file '.env', foreman_email if prefer :local_env_file, 'foreman'
     append_file 'config/application.yml', figaro_email if prefer :local_env_file, 'figaro'
   end
@@ -2214,7 +2428,7 @@ stage_three do
   if prefer :authentication, 'devise'
     inject_into_file 'config/secrets.yml', "\n" + '  domain_name: example.com' + " ", :after => "test:"
     inject_into_file 'config/secrets.yml', "\n" + secrets_d_devise, :after => "development:"
-    inject_into_file 'config/secrets.yml', "\n" + secrets_p_devise, :after => "production:"
+    inject_into_file 'config/secrets.yml', "\n" + secrets_p_devise, :after => "\n" + "production:"
     append_file '.env', foreman_devise if prefer :local_env_file, 'foreman'
     append_file 'config/application.yml', figaro_devise if prefer :local_env_file, 'figaro'
     gsub_file 'config/initializers/devise.rb', /'please-change-me-at-config-initializers-devise@example.com'/, "'no-reply@' + Rails.application.secrets.domain_name"
@@ -2223,7 +2437,7 @@ stage_three do
   if prefer :authentication, 'omniauth'
     inject_into_file 'config/secrets.yml', "\n" + secrets_omniauth, :after => "development:"
     ### 'inject_into_file' doesn't let us inject the same text twice unless we append the extra space, why?
-    inject_into_file 'config/secrets.yml', "\n" + secrets_omniauth + " ", :after => "production:"
+    inject_into_file 'config/secrets.yml', "\n" + secrets_omniauth + " ", :after => "\n" + "production:"
     append_file '.env', foreman_omniauth if prefer :local_env_file, 'foreman'
     append_file 'config/application.yml', figaro_omniauth if prefer :local_env_file, 'figaro'
   end
@@ -2278,7 +2492,7 @@ FILE
   end
   ## DEVISE-CONFIRMABLE
   if (prefer :devise_modules, 'confirmable') || (prefer :devise_modules, 'invitable')
-    inject_into_file 'app/services/create_admin_service.rb', "        user.confirm!\n", :after => "user.password_confirmation = Rails.application.secrets.admin_password\n"
+    inject_into_file 'app/services/create_admin_service.rb', "        user.confirm\n", :after => "user.password_confirmation = Rails.application.secrets.admin_password\n"
   end
   ## DEVISE-INVITABLE
   if prefer :devise_modules, 'invitable'
@@ -2315,12 +2529,18 @@ FILE
     case prefs[:frontend]
       when 'bootstrap3'
         generate 'layout:devise bootstrap3 -f'
+      when 'bootstrap4'
+        generate 'layout:devise bootstrap3 -f'
       when 'foundation5'
         generate 'layout:devise foundation5 -f'
     end
   end
   # create navigation links using the rails_layout gem
-  generate 'layout:navigation -f'
+  if prefs[:frontend] == 'bootstrap4'
+    generate 'layout:navigation bootstrap4 -f'
+  else
+    generate 'layout:navigation -f'
+  end
   if prefer :apps4, 'rails-stripe-coupons'
     inject_into_file 'app/views/layouts/_nav_links_for_auth.html.erb', ", data: { no_turbolink: true }", :after => "new_user_registration_path"
     inject_into_file 'app/views/layouts/_nav_links_for_auth.html.erb', "\n    <li><%= link_to 'Coupons', coupons_path %></li>", :after => "users_path %></li>"
@@ -2349,12 +2569,12 @@ say_recipe 'analytics'
 
 prefs[:analytics] = multiple_choice "Install page-view analytics?", [["None", "none"],
   ["Google Analytics", "ga"],
-  ["Segment.io", "segmentio"]] unless prefs.has_key? :analytics
+  ["Segment.com", "segmentio"]] unless prefs.has_key? :analytics
 case prefs[:analytics]
   when 'ga'
     ga_id = ask_wizard('Google Analytics ID?')
   when 'segmentio'
-    segmentio_api_key = ask_wizard('Segment.io API key?')
+    segmentio_api_key = ask_wizard('Segment.com Write Key?')
 end
 
 stage_two do
@@ -2400,139 +2620,6 @@ if prefer :deployment, 'heroku'
     add_gem 'sqlite3', group: [:development, :test]
     add_gem 'pg', group: :production
   end
-  add_gem 'rails_12factor', group: :production
-  stage_three do
-    say_wizard "recipe stage three"
-    say_wizard "precompiling assets for Heroku"
-    run 'RAILS_ENV=production rake assets:precompile'
-    say_wizard "creating app.json file for Heroku Button"
-    create_file 'app.json' do <<-TEXT
-{
-  "name": "#{app_name.humanize.titleize}",
-  "description": "Starter application generated by Rails Composer",
-  "logo": "https://avatars3.githubusercontent.com/u/788200",
-TEXT
-    end
-    append_file 'app.json', "  \"repository\": \"https://github.com/RailsApps/#{prefs[:apps4]}\",\n" if prefs.keys.include?(:apps4)
-    append_file 'app.json', '  "keywords": [' + "\n"
-    append_file 'app.json', '    "Rails Composer",' + "\n"
-    append_file 'app.json', '    "RailsApps",' + "\n" + '    "starter",' + "\n" if prefs.keys.include?(:apps4)
-    append_file 'app.json', '    "RSpec",' + "\n" if prefer :tests, 'rspec'
-    append_file 'app.json', '    "Bootstrap",' + "\n" if prefer :frontend, 'bootstrap3'
-    append_file 'app.json', '    "Foundation",' + "\n" if prefer :frontend, 'pundit'
-    append_file 'app.json', '    "authentication",' + "\n" + '    "Devise",' + "\n" if prefer :authentication, 'devise'
-    append_file 'app.json', '    "authentication",' + "\n" + '    "OmniAuth",' + "\n" if prefer :authentication, 'omniauth'
-    append_file 'app.json', '    "authorization",' + "\n" + '    "roles",' + "\n" if prefer :authorization, 'roles'
-    append_file 'app.json', '    "authorization",' + "\n" + '    "Pundit",' + "\n" if prefer :authorization, 'pundit'
-    append_file 'app.json' do <<-TEXT
-    "Ruby",
-    "Rails"
-  ],
-  "scripts": {},
-  "env": {
-TEXT
-    end
-    case prefs[:email]
-      when 'gmail'
-        append_file 'app.json' do <<-TEXT
-    "GMAIL_USERNAME": {
-      "description": "Your Gmail address for sending mail.",
-      "value": "user@example.com",
-      "required": false
-    },
-    "GMAIL_PASSWORD": {
-      "description": "Your Gmail password for sending mail.",
-      "value": "changeme",
-      "required": false
-    },
-TEXT
-        end
-      when 'sendgrid'
-        append_file 'app.json' do <<-TEXT
-    "SENDGRID_USERNAME": {
-      "description": "Your SendGrid address for sending mail.",
-      "value": "user@example.com",
-      "required": false
-    },
-    "SENDGRID_PASSWORD": {
-      "description": "Your SendGrid password for sending mail.",
-      "value": "changeme",
-      "required": false
-    },
-TEXT
-        end
-      when 'mandrill'
-        append_file 'app.json' do <<-TEXT
-    "MANDRILL_USERNAME": {
-      "description": "Your Mandrill address for sending mail.",
-      "value": "user@example.com",
-      "required": false
-    },
-    "MANDRILL_APIKEY": {
-      "description": "Your Mandrill API key for sending mail.",
-      "value": "changeme",
-      "required": false
-    },
-TEXT
-      end
-    end
-    if prefer :authentication, 'omniauth'
-      append_file 'app.json' do <<-TEXT
-    "OMNIAUTH_PROVIDER_KEY": {
-      "description": "Credentials from Twitter, Facebook, or another provider.",
-      "value": "some_long_key",
-      "required": false
-    },
-    "OMNIAUTH_PROVIDER_SECRET": {
-      "description": "Credentials from Twitter, Facebook, or another provider.",
-      "value": "some_long_key",
-      "required": false
-    },
-TEXT
-      end
-    end
-    if prefer :authentication, 'devise'
-      append_file 'app.json' do <<-TEXT
-    "ADMIN_EMAIL": {
-      "description": "The administrator's email address for signing in.",
-      "value": "user@example.com",
-      "required": true
-    },
-    "ADMIN_PASSWORD": {
-      "description": "The administrator's password for signing in.",
-      "value": "changeme",
-      "required": true
-    },
-    "DOMAIN_NAME": {
-      "description": "Required for sending mail. Give an app name or use a custom domain.",
-      "value": "myapp.herokuapp.com",
-      "required": false
-    },
-TEXT
-      end
-    end
-    if (!prefs[:secrets].nil?)
-      prefs[:secrets].each do |secret|
-        append_file 'app.json' do <<-TEXT
-    "#{secret.upcase}": {
-      "description": "no description",
-      "required": false
-    },
-TEXT
-        end
-      end
-    end
-    append_file 'app.json' do <<-TEXT
-    "RAILS_ENV": "production"
-  }
-}
-TEXT
-    end
-    if File.exists?('db/migrate')
-      gsub_file 'app.json', /"scripts": {/,
-          "\"scripts\": {\"postdeploy\": \"bundle exec rake db:migrate; bundle exec rake db:seed\""
-    end
-  end
 end
 
 if prefer :deployment, 'capistrano3'
@@ -2566,8 +2653,7 @@ config = {}
 config['disable_turbolinks'] = yes_wizard?("Disable Rails Turbolinks?") if true && true unless config.key?('disable_turbolinks') || prefs.has_key?(:disable_turbolinks)
 config['ban_spiders'] = yes_wizard?("Set a robots.txt file to ban spiders?") if true && true unless config.key?('ban_spiders') || prefs.has_key?(:ban_spiders)
 config['github'] = yes_wizard?("Create a GitHub repository?") if true && true unless config.key?('github') || prefs.has_key?(:github)
-config['local_env_file'] = multiple_choice("Add gem and file for environment variables?", [["None", "none"], ["Add .env with Foreman", "foreman"], ["Add application.yml with Figaro", "figaro"]]) if true && true unless config.key?('local_env_file') || prefs.has_key?(:local_env_file)
-config['quiet_assets'] = yes_wizard?("Reduce assets logger noise during development?") if true && true unless config.key?('quiet_assets') || prefs.has_key?(:quiet_assets)
+config['local_env_file'] = multiple_choice("Add gem and file for environment variables?", [["None", "none"], ["Add .env with Foreman", "foreman"]]) if true && true unless config.key?('local_env_file') || prefs.has_key?(:local_env_file)
 config['better_errors'] = yes_wizard?("Improve error reporting with 'better_errors' during development?") if true && true unless config.key?('better_errors') || prefs.has_key?(:better_errors)
 config['pry'] = yes_wizard?("Use 'pry' as console replacement during development and test?") if true && true unless config.key?('pry') || prefs.has_key?(:pry)
 config['rubocop'] = yes_wizard?("Use 'rubocop' to ensure that your code conforms to the Ruby style guide?") if true && true unless config.key?('rubocop') || prefs.has_key?(:rubocop)
@@ -2578,74 +2664,17 @@ config['rubocop'] = yes_wizard?("Use 'rubocop' to ensure that your code conforms
 # https://github.com/RailsApps/rails_apps_composer/blob/master/recipes/extras.rb
 
 ## RVMRC
-rvmrc_detected = false
-if File.exist?('.rvmrc')
-  rvmrc_file = File.read('.rvmrc')
-  rvmrc_detected = rvmrc_file.include? app_name
-end
-if File.exist?('.ruby-gemset')
-  rvmrc_file = File.read('.ruby-gemset')
-  rvmrc_detected = rvmrc_file.include? app_name
-end
-unless rvmrc_detected || (prefs.has_key? :rvmrc)
-  prefs[:rvmrc] = yes_wizard? "Use or create a project-specific rvm gemset?"
-end
 if prefs[:rvmrc]
-  if which("rvm")
-    say_wizard "recipe creating project-specific rvm gemset and .rvmrc"
-    # using the rvm Ruby API, see:
-    # http://blog.thefrontiergroup.com.au/2010/12/a-brief-introduction-to-the-rvm-ruby-api/
-    # https://rvm.io/integration/passenger
-    if ENV['MY_RUBY_HOME'] && ENV['MY_RUBY_HOME'].include?('rvm')
-      begin
-        gems_path = ENV['MY_RUBY_HOME'].split(/@/)[0].sub(/rubies/,'gems')
-        ENV['GEM_PATH'] = "#{gems_path}:#{gems_path}@global"
-        require 'rvm'
-        RVM.use_from_path! File.dirname(File.dirname(__FILE__))
-      rescue LoadError
-        raise "RVM gem is currently unavailable."
-      end
-    end
-    say_wizard "creating RVM gemset '#{app_name}'"
-    RVM.gemset_create app_name
-    say_wizard "switching to gemset '#{app_name}'"
-    # RVM.gemset_use! requires rvm version 1.11.3.5 or newer
-    rvm_spec =
-      if Gem::Specification.respond_to?(:find_by_name)
-        Gem::Specification.find_by_name("rvm")
-      else
-        Gem.source_index.find_name("rvm").last
-      end
-      unless rvm_spec.version > Gem::Version.create('1.11.3.4')
-        say_wizard "rvm gem version: #{rvm_spec.version}"
-        raise "Please update rvm gem to 1.11.3.5 or newer"
-      end
-    begin
-      RVM.gemset_use! app_name
-    rescue => e
-      say_wizard "rvm failure: unable to use gemset #{app_name}, reason: #{e}"
-      raise
-    end
-    if File.exist?('.ruby-version')
-      say_wizard ".ruby-version file already exists"
-    else
-      create_file '.ruby-version', "#{RUBY_VERSION}\n"
-    end
-    if File.exist?('.ruby-gemset')
-      say_wizard ".ruby-gemset file already exists"
-    else
-      create_file '.ruby-gemset', "#{app_name}\n"
-    end
-  else
-    say_wizard "WARNING! RVM does not appear to be available."
-  end
-end
-
-## QUIET ASSETS
-prefs[:quiet_assets] = true if config['quiet_assets']
-if prefs[:quiet_assets]
-  say_wizard "recipe setting quiet_assets for reduced asset pipeline logging"
-  add_gem 'quiet_assets', :group => :development
+   if File.exist?('.ruby-version')
+     say_wizard ".ruby-version file already exists"
+   else
+     create_file '.ruby-version', "#{RUBY_VERSION}\n"
+   end
+   if File.exist?('.ruby-gemset')
+     say_wizard ".ruby-gemset file already exists"
+   else
+     create_file '.ruby-gemset', "#{app_name}\n"
+   end
 end
 
 ## LOCAL_ENV.YML FILE
@@ -2701,14 +2730,18 @@ if prefs[:disable_turbolinks]
   stage_two do
     say_wizard "recipe stage two"
     gsub_file 'Gemfile', /gem 'turbolinks'\n/, ''
+    gsub_file 'Gemfile', /gem 'turbolinks', '~> 5'\n/, ''
     gsub_file 'app/assets/javascripts/application.js', "//= require turbolinks\n", ''
     case prefs[:templates]
       when 'erb'
         gsub_file 'app/views/layouts/application.html.erb', /, 'data-turbolinks-track' => true/, ''
+        gsub_file 'app/views/layouts/application.html.erb', /, 'data-turbolinks-track' => 'reload'/, ''
       when 'haml'
         gsub_file 'app/views/layouts/application.html.haml', /, 'data-turbolinks-track' => true/, ''
+        gsub_file 'app/views/layouts/application.html.haml', /, 'data-turbolinks-track' => 'reload'/, ''
       when 'slim'
         gsub_file 'app/views/layouts/application.html.slim', /, 'data-turbolinks-track' => true/, ''
+        gsub_file 'app/views/layouts/application.html.slim', /, 'data-turbolinks-track' => 'reload'/, ''
     end
   end
 end
@@ -2752,7 +2785,7 @@ stage_four do
   remove_file 'config/railscomposer.yml'
   # remove commented lines and multiple blank lines from Gemfile
   # thanks to https://github.com/perfectline/template-bucket/blob/master/cleanup.rb
-  gsub_file 'Gemfile', /#.*\n/, "\n"
+  gsub_file 'Gemfile', /#\s.*\n/, "\n"
   gsub_file 'Gemfile', /\n^\s*\n/, "\n"
   remove_file 'Gemfile.lock'
   # remove commented lines and multiple blank lines from config/routes.rb
@@ -2802,7 +2835,6 @@ redacted_prefs.delete(:local_env_file)
 redacted_prefs.delete(:main_branch)
 redacted_prefs.delete(:prelaunch_branch)
 redacted_prefs.delete(:prod_webserver)
-redacted_prefs.delete(:quiet_assets)
 redacted_prefs.delete(:rvmrc)
 redacted_prefs.delete(:templates)
 
