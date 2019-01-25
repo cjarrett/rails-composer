@@ -357,7 +357,7 @@ if options[:verbose]
 end
 
 case Rails::VERSION::MAJOR.to_s
-when "5"
+when "5","6"
   prefs[:apps4] = multiple_choice "Build a starter application?",
     [["Build a RailsApps example application", "railsapps"],
     ["Contributed applications", "contributed_app"],
@@ -480,7 +480,7 @@ if prefer :apps4, 'learn-rails'
   prefs[:disable_turbolinks] = false
   prefs[:rvmrc] = true
 
-  if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+  if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1 || Rails::VERSION::MAJOR == 6
     prefs[:form_builder] = false
     prefs[:jquery] = 'gem'
   else
@@ -517,7 +517,7 @@ if prefer :apps4, 'learn-rails'
 
     # >-------------------------------[ Views ]--------------------------------<
 
-    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1 || Rails::VERSION::MAJOR == 6
       copy_from_repo 'app/views/visitors/new.html.erb', :repo => repo
       copy_from_repo 'app/views/contacts/new.html.erb', :repo => repo
     else
@@ -1369,7 +1369,7 @@ if recipes.include? 'frontend'
 end
 
 ## jQuery
-if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1 || Rails::VERSION::MAJOR == 6
   if prefs[:frontend] == 'none'
     prefs[:jquery] = multiple_choice "Add jQuery?", [["No", "none"],
       ["Add jquery-rails gem", "gem"],
@@ -1751,7 +1751,7 @@ if prefer :database, 'postgresql'
   if Rails::VERSION::MAJOR < 5
     add_gem 'pg', '~> 0.18'
   else
-    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR <= 1 && Rails::VERSION::MINOR <= 5
+    if Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR <= 1 && Rails::VERSION::MINOR <= 5 || Rails::VERSION::MAJOR == 6
       add_gem 'pg', '~> 0.18'
     else
       add_gem 'pg'
@@ -1781,7 +1781,7 @@ if prefer :tests, 'rspec'
   add_gem 'spring-commands-rspec', :group => :development
   add_gem 'factory_bot_rails', :group => [:development, :test]
   add_gem 'faker', :group => [:development, :test]
-  unless Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1
+  unless Rails::VERSION::MAJOR == 5 && Rails::VERSION::MINOR >= 1 || Rails::VERSION::MAJOR == 6
     add_gem 'capybara', :group => :test
     add_gem 'selenium-webdriver', :group => :test
   end
